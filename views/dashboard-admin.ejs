@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <%- include('partials/head') %>
+</head>
+<body>
+  <nav class="blue darken-3 brand-bar">
+    <div class="nav-wrapper container">
+      <span class="brand-logo">Administrador</span>
+      <ul class="right hide-on-med-and-down">
+        <li><a href="/dashboard-admin">Usuarios</a></li>
+        <li><a href="/dashboard-user">Panel usuario</a></li>
+        <li><a href="/profile">Mi cuenta</a></li>
+        <li><a href="#" id="logout">Salir</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <div class="container">
+      <h5>Listado de usuarios</h5>
+      <p class="grey-text">Solo rol <strong>admin</strong>. Fecha de registro (<code>createdAt</code>).</p>
+      <div id="err" class="card-panel red lighten-4" style="display:none"></div>
+
+      <table class="striped responsive-table white">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Email</th>
+            <th>Teléfono</th>
+            <th>Roles</th>
+            <th>Registro</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <div id="modal-user" class="modal modal-fixed-footer">
+    <div class="modal-content">
+      <h4>Detalle del usuario</h4>
+      <pre id="modal-body" style="white-space:pre-wrap;font-family:inherit;"></pre>
+    </div>
+    <div class="modal-footer">
+      <a href="#!" class="modal-close waves-effect waves-green btn-flat">Cerrar</a>
+    </div>
+  </div>
+
+  <%- include('partials/scripts') %>
+  <script>
+    document.addEventListener('DOMContentLoaded', async function () {
+      if (!AuthLab.requireToken()) return;
+
+      document.getElementById('logout').addEventListener('click', function (e) {
+        e.preventDefault();
+        AuthLab.clearSession();
+        window.location.href = '/signIn';
+      });
+
+      var modalEl = document.getElementById('modal-user');
+      var modal = M.Modal.init(modalEl);
+
+      try {
+        var check = await fetch('/api/users/me', { headers: AuthLab.authHeaders() });
+        await AuthLab.handleAuthResponse(check);
+        var me = await check.json();
+        var roles = me.roles || [];
+        if (roles.indexOf('admin') === -1) {
+          window.location.href = '/403';
+          return;
+        }
+
+        var res = await fetch('/api/users', { headers: AuthLab.authHeaders() });
+        await AuthLab.handleAuthResponse(res);
+        var users = await res.json();
+        var tbody = document.getElementById('tbody');
+        tbody.innerHTML = '';
+        users.forEach(function (u) {
+          var tr = document.createElement('tr');
+          var reg = u.createdAt ? AuthLab.formatDisplayDate(u.createdAt) : '';
+          tr.innerHTML =
+            '<td>' +
+            (u.name || '') +
+            ' ' +
+            (u.lastName || '') +
+            '</td>' +
+            '<td>' +
+            u.email +
+            '</td>' +
+            '<td>' +
+            (u.phoneNumber || '') +
+            '</td>' +
+            '<td>' +
+            (u.roles || []).join(', ') +
+            '</td>' +
+            '<td>' +
+            reg +
+            '</td>' +
+            '<td><button class="btn-small waves-effect blue darken-3 btn-detail" data-id="' +
+            u.id +
+            '">Ver</button></td>';
+          tbody.appendChild(tr);
+        });
+
+        tbody.addEventListener('click', async function (ev) {
+          var btn = ev.target.closest('.btn-detail');
+          if (!btn) return;
+          var id = btn.getAttribute('data-id');
+          try {
+            var r = await fetch('/api/users/' + id, { headers: AuthLab.authHeaders() });
+            await AuthLab.handleAuthResponse(r);
+            var detail = await r.json();
+            document.getElementById('modal-body').textContent = JSON.stringify(detail, null, 2);
+            modal.open();
+          } catch (e) {}
+        });
+      } catch (err) {
+        var bad = document.getElementById('err');
+        bad.style.display = 'block';
+        bad.textContent = err.message || 'Error al cargar usuarios';
+      }
+    });
+  </script>
+</body>
+</html>

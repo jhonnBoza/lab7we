@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <%- include('partials/head') %>
+</head>
+<body>
+  <nav class="blue darken-3 brand-bar">
+    <div class="nav-wrapper container">
+      <a href="#" class="brand-logo">Mi cuenta</a>
+      <ul class="right hide-on-med-and-down">
+        <li><a href="/profile">Perfil</a></li>
+        <li><a href="#" id="logout">Salir</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <div class="container">
+      <div id="msg" class="card-panel green lighten-4" style="display:none"></div>
+      <div id="err" class="card-panel red lighten-4" style="display:none"></div>
+
+      <div class="card">
+        <div class="card-content">
+          <span class="card-title">Datos personales</span>
+          <p class="grey-text">La edad se calcula a partir de la fecha de nacimiento.</p>
+          <form id="form-profile">
+            <div class="row">
+              <div class="input-field col s12 m6">
+                <input id="name" type="text" required />
+                <label for="name">Nombre</label>
+              </div>
+              <div class="input-field col s12 m6">
+                <input id="lastName" type="text" required />
+                <label for="lastName">Apellidos</label>
+              </div>
+              <div class="input-field col s12 m6">
+                <input id="phoneNumber" type="tel" required />
+                <label for="phoneNumber">Teléfono</label>
+              </div>
+              <div class="input-field col s12 m6">
+                <input id="birthdate" type="date" required />
+                <label for="birthdate" class="active">Fecha de nacimiento</label>
+              </div>
+              <div class="input-field col s12 m6">
+                <input id="email" type="email" required />
+                <label for="email">Email</label>
+              </div>
+              <div class="input-field col s12 m6">
+                <input id="age" type="text" disabled />
+                <label for="age" class="active">Edad</label>
+              </div>
+              <div class="input-field col s12 m6">
+                <input id="url_profile" type="url" />
+                <label for="url_profile">URL perfil</label>
+              </div>
+              <div class="input-field col s12 m6">
+                <input id="adress" type="text" />
+                <label for="adress">Dirección</label>
+              </div>
+              <div class="input-field col s12">
+                <input id="password" type="password" autocomplete="new-password" />
+                <label for="password">Nueva contraseña (opcional)</label>
+              </div>
+            </div>
+            <button class="btn waves-effect waves-light blue darken-3" type="submit">
+              Guardar cambios <i class="material-icons right">save</i>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <p><a href="#" id="back-dash">Volver al panel</a></p>
+    </div>
+  </main>
+
+  <%- include('partials/scripts') %>
+  <script>
+    document.addEventListener('DOMContentLoaded', async function () {
+      if (!AuthLab.requireToken()) return;
+
+      document.getElementById('logout').addEventListener('click', function (e) {
+        e.preventDefault();
+        AuthLab.clearSession();
+        window.location.href = '/signIn';
+      });
+
+      document.getElementById('back-dash').addEventListener('click', async function (e) {
+        e.preventDefault();
+        var res = await fetch('/api/users/me', { headers: AuthLab.authHeaders() });
+        await AuthLab.handleAuthResponse(res);
+        var me = await res.json();
+        var roles = me.roles || [];
+        window.location.href =
+          roles.indexOf('admin') !== -1 ? '/dashboard-admin' : '/dashboard-user';
+      });
+
+      function show(el, text) {
+        el.style.display = 'block';
+        el.textContent = text;
+      }
+
+      try {
+        var res = await fetch('/api/users/me', { headers: AuthLab.authHeaders() });
+        await AuthLab.handleAuthResponse(res);
+        var me = await res.json();
+        document.getElementById('name').value = me.name || '';
+        document.getElementById('lastName').value = me.lastName || '';
+        document.getElementById('phoneNumber').value = me.phoneNumber || '';
+        document.getElementById('birthdate').value = AuthLab.formatDateInput(me.birthdate);
+        document.getElementById('email').value = me.email || '';
+        document.getElementById('age').value =
+          me.age != null ? me.age + ' años' : '';
+        document.getElementById('url_profile').value = me.url_profile || '';
+        document.getElementById('adress').value = me.adress || '';
+        M.updateTextFields();
+      } catch (err) {
+        return;
+      }
+
+      document.getElementById('form-profile').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        var ok = document.getElementById('msg');
+        var bad = document.getElementById('err');
+        ok.style.display = 'none';
+        bad.style.display = 'none';
+        var body = {
+          name: document.getElementById('name').value.trim(),
+          lastName: document.getElementById('lastName').value.trim(),
+          phoneNumber: document.getElementById('phoneNumber').value.trim(),
+          birthdate: document.getElementById('birthdate').value,
+          email: document.getElementById('email').value.trim(),
+          url_profile: document.getElementById('url_profile').value.trim(),
+          adress: document.getElementById('adress').value.trim()
+        };
+        var np = document.getElementById('password').value;
+        if (np) body.password = np;
+        try {
+          var res = await fetch('/api/users/me', {
+            method: 'PATCH',
+            headers: AuthLab.authHeaders(),
+            body: JSON.stringify(body)
+          });
+          await AuthLab.handleAuthResponse(res);
+          var data = await res.json().catch(function () {
+            return {};
+          });
+          if (!res.ok) {
+            show(bad, data.message || 'No se pudo actualizar');
+            return;
+          }
+          document.getElementById('age').value =
+            data.age != null ? data.age + ' años' : '';
+          document.getElementById('password').value = '';
+          show(ok, 'Cambios guardados.');
+        } catch (err) {
+          show(bad, err.message || 'Error');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

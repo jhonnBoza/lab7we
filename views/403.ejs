@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <%- include('partials/head') %>
+</head>
+<body>
+  <nav class="blue darken-3 brand-bar">
+    <div class="nav-wrapper container">
+      <span class="brand-logo">403</span>
+    </div>
+  </nav>
+
+  <main>
+    <div class="container center-align" style="margin-top:4rem">
+      <i class="material-icons large orange-text text-darken-2">block</i>
+      <h4>Acceso denegado</h4>
+      <p class="flow-text grey-text text-darken-1">
+        No tienes permisos suficientes para ver esta página.
+      </p>
+      <p>
+        <a class="btn blue darken-3" href="/signIn">Ir al inicio de sesión</a>
+      </p>
+    </div>
+  </main>
+
+  <%- include('partials/scripts') %>
+</body>
+</html>

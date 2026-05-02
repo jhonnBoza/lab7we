@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <%- include('partials/head') %>
+</head>
+<body>
+  <nav class="blue darken-3 brand-bar">
+    <div class="nav-wrapper container">
+      <span class="brand-logo">Lab JWT</span>
+      <ul id="nav-mobile" class="right hide-on-med-and-down">
+        <li><a href="/signUp">Registro</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <div class="container">
+      <div class="row">
+        <div class="col s12 m8 offset-m2 l6 offset-l3">
+          <div class="card">
+            <div class="card-content">
+              <span class="card-title">Iniciar sesión</span>
+              <p class="grey-text">El token JWT se guarda en <code>sessionStorage</code>.</p>
+              <div id="msg" class="red-text text-darken-2" style="min-height:1.5rem"></div>
+              <form id="form-signin">
+                <div class="input-field">
+                  <input id="email" type="email" class="validate" required autocomplete="username" />
+                  <label for="email">Email</label>
+                </div>
+                <div class="input-field">
+                  <input id="password" type="password" class="validate" required autocomplete="current-password" />
+                  <label for="password">Contraseña</label>
+                </div>
+                <button class="btn waves-effect waves-light blue darken-3" type="submit">
+                  Entrar <i class="material-icons right">login</i>
+                </button>
+              </form>
+            </div>
+          </div>
+          <p class="center grey-text">
+            ¿No tienes cuenta? <a href="/signUp">Crear cuenta</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <%- include('partials/scripts') %>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      M.updateTextFields();
+      document.getElementById('form-signin').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        var msg = document.getElementById('msg');
+        msg.textContent = '';
+        var email = document.getElementById('email').value.trim();
+        var password = document.getElementById('password').value;
+        try {
+          var res = await fetch('/api/auth/signIn', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email, password: password })
+          });
+          var data = await res.json().catch(function () {
+            return {};
+          });
+          if (!res.ok) {
+            msg.textContent = data.message || 'No se pudo iniciar sesión';
+            return;
+          }
+          AuthLab.setToken(data.token);
+          var meRes = await fetch('/api/users/me', { headers: AuthLab.authHeaders() });
+          await AuthLab.handleAuthResponse(meRes);
+          var me = await meRes.json();
+          var roles = me.roles || [];
+          if (roles.indexOf('admin') !== -1) {
+            window.location.href = '/dashboard-admin';
+          } else {
+            window.location.href = '/dashboard-user';
+          }
+        } catch (err) {
+          msg.textContent = err.message || 'Error de red';
+        }
+      });
+    });
+  </script>
+</body>
+</html>
