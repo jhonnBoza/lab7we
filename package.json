@@ -4,6 +4,7 @@
   "description": "",
   "type": "module",
   "scripts": {
+    "test:db": "node scripts/test-mongo.mjs",
     "start": "node src/server.js",
     "dev": "nodemon --watch src --exec node --experimental-specifier-resolution=node src/server.js"
   },

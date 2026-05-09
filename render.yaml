@@ -1,0 +1,26 @@
+# Blueprint Render: https://render.com/docs/blueprint-spec
+# Tras conectar el repo, define en el panel los valores marcados sync: false
+# (o edítalos aquí si prefieres; no pongas secretos reales en git).
+
+services:
+  - type: web
+    name: lab7-express-auth
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 1h
+      - key: BCRYPT_SALT_ROUNDS
+        value: "10"
+      - key: SEED_ADMIN_EMAIL
+        sync: false
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
