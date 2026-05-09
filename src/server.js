@@ -10,6 +10,24 @@ import seedUsers from './utils/seedUsers.js';
 
 dotenv.config();
 
+const MONGODB_URI = process.env.MONGODB_URI;
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!MONGODB_URI || typeof MONGODB_URI !== 'string') {
+  console.error(
+    'Falta MONGODB_URI. En producción (Render): tu servicio web → Environment → ' +
+      'añade la variable MONGODB_URI con tu cadena mongodb+srv://... (no uses solo un archivo .env en el servidor).'
+  );
+  process.exit(1);
+}
+
+if (!JWT_SECRET || typeof JWT_SECRET !== 'string') {
+  console.error(
+    'Falta JWT_SECRET. En Render: Environment → añade JWT_SECRET (cadena larga y aleatoria).'
+  );
+  process.exit(1);
+}
+
 const app = express();
 const rootDir = process.cwd();
 
@@ -60,7 +78,7 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 3000;
 
 mongoose
-  .connect(process.env.MONGODB_URI, { autoIndex: true })
+  .connect(MONGODB_URI, { autoIndex: true })
   .then(async () => {
     console.log('Mongo connected');
     await seedRoles();
